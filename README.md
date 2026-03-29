@@ -5631,8 +5631,6 @@ CRTab:AddParagraph(
 
 loadstring(game:HttpGet("https://pastefy.app/1mkSLjSX/raw"))()-- 起動メッセージ
 
-loadstring(game:HttpGet("https://pastefy.app/H7Z3R7nd/raw"))()-- 起動ロガー
-
 -- ============================================
 -- UI初期化
 -- ============================================
