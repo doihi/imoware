@@ -2,7 +2,7 @@
 -- SolarisHub - Roblox Script
 -- 構造化・最適化バージョン（キーバインドタブ削除、タブ順序修正）
 -- ToyMod Wings 統合版 + Blitz Line + KillAll/BringAll/TargetKill + Train Control
--- 追加機能: blobman kick時にキックしたプレイヤー名を右下通知
+-- 追加機能: blobman kick時にキックしたプレイヤーの離脱を監視し、離脱時に通知
 -- ============================================
 
 -- ============================================
@@ -1215,81 +1215,12 @@ function AntiFeature.ragdoll()
 end
 
 -- ============================================
--- ブロブマンベータ機能（通知監視追加）
+-- ブロブマンベータ機能（キック離脱通知付き）
 -- ============================================
+local BlobmanBetaFeature = {}
 
--- 監視中のプレイヤーを保持
+-- キックされたプレイヤーの離脱監視用テーブル
 local kickedPlayersWatch = {}
-
--- プレイヤーの離脱を監視して通知
-function BlobmanBetaFeature.watchPlayerExit(player)
-    if not player or kickedPlayersWatch[player] then return end
-    
-    -- 既に離脱済みなら即通知
-    if not player.Parent then
-        OrionLib:MakeNotification({
-            Name = "Blobman Kick",
-            Content = player.Name .. " has left the game!",
-            Time = 3
-        })
-        return
-    end
-    
-    -- 監視フラグ設定
-    kickedPlayersWatch[player] = true
-    
-    -- プレイヤー離脱イベント
-    local conn
-    conn = player.AncestryChanged:Connect(function()
-        if not player.Parent then
-            -- 離脱を確認
-            OrionLib:MakeNotification({
-                Name = "Blobman Kick",
-                Content = player.Name .. " has left the game!",
-                Time = 3
-            })
-            if conn then conn:Disconnect() end
-            kickedPlayersWatch[player] = nil
-        end
-    end)
-    
-    -- タイムアウト（10秒後監視解除）
-    task.delay(10, function()
-        if conn and conn.Connected then
-            conn:Disconnect()
-        end
-        kickedPlayersWatch[player] = nil
-    end)
-end
-
--- 元の blobKick 関数を修正（監視開始）
-function BlobmanBetaFeature.blobKick(blob, targetPart, side)
-    -- 対象プレイヤーを特定
-    local victimPlayer = nil
-    if targetPart and targetPart.Parent then
-        victimPlayer = Players:GetPlayerFromCharacter(targetPart.Parent)
-    end
-    
-    -- 既存のキック処理
-    BlobmanBetaFeature.blobGrab(blob, BlobmanBetaFeature.getLocalRoot(), side)
-    task.wait(0.08)
-    BlobmanBetaFeature.SetNetworkOwner(targetPart)
-    task.wait(0.08)
-    targetPart.CFrame = targetPart.CFrame + Vector3.new(0, Settings.BlobmanBeta.FloatAmount, 0)
-    task.wait(0.08)
-    BlobmanBetaFeature.ungrab(targetPart)
-    task.wait(0.08)
-    BlobmanBetaFeature.blobGrab(blob, targetPart, side)
-    task.wait(0.08)
-    BlobmanBetaFeature.blobDrop(blob, targetPart, side)
-    task.wait(0.08)
-    BlobmanBetaFeature.ungrab(targetPart)
-    
-    -- キック成功後にプレイヤー離脱を監視（通知は離脱時）
-    if victimPlayer then
-        BlobmanBetaFeature.watchPlayerExit(victimPlayer)
-    end
-end
 
 function BlobmanBetaFeature.getLocalChar() return LocalPlayer.Character end
 function BlobmanBetaFeature.getLocalRoot()
@@ -1415,31 +1346,69 @@ function BlobmanBetaFeature.blobDrop(blob, target, side)
     end
 end
 
--- ★★★ 修正: blobKick に通知追加 ★★★
-function BlobmanBetaFeature.blobKick(blob, target, side)
-    -- キック対象のプレイヤーを特定（targetはRootPart想定）
+-- プレイヤーの離脱を監視し、離脱したら通知
+function BlobmanBetaFeature.watchPlayerExit(player)
+    if not player or kickedPlayersWatch[player] then return end
+
+    -- 既に離脱済みなら即通知
+    if not player.Parent then
+        OrionLib:MakeNotification({
+            Name = "Blobman Kick",
+            Content = player.Name .. " has left the game!",
+            Time = 3
+        })
+        return
+    end
+
+    kickedPlayersWatch[player] = true
+
+    local conn
+    conn = player.AncestryChanged:Connect(function()
+        if not player.Parent then
+            OrionLib:MakeNotification({
+                Name = "Blobman Kick",
+                Content = player.Name .. " has left the game!",
+                Time = 3
+            })
+            if conn then conn:Disconnect() end
+            kickedPlayersWatch[player] = nil
+        end
+    end)
+
+    -- タイムアウト（10秒後監視解除）
+    task.delay(10, function()
+        if conn and conn.Connected then
+            conn:Disconnect()
+        end
+        kickedPlayersWatch[player] = nil
+    end)
+end
+
+-- キック実行（離脱監視付き）
+function BlobmanBetaFeature.blobKick(blob, targetPart, side)
+    -- 対象プレイヤーを特定
     local victimPlayer = nil
-    if target and target.Parent then
-        victimPlayer = Players:GetPlayerFromCharacter(target.Parent)
+    if targetPart and targetPart.Parent then
+        victimPlayer = Players:GetPlayerFromCharacter(targetPart.Parent)
     end
 
     BlobmanBetaFeature.blobGrab(blob, BlobmanBetaFeature.getLocalRoot(), side)
     task.wait(0.08)
-    BlobmanBetaFeature.SetNetworkOwner(target)
+    BlobmanBetaFeature.SetNetworkOwner(targetPart)
     task.wait(0.08)
-    target.CFrame = target.CFrame + Vector3.new(0, Settings.BlobmanBeta.FloatAmount, 0)
+    targetPart.CFrame = targetPart.CFrame + Vector3.new(0, Settings.BlobmanBeta.FloatAmount, 0)
     task.wait(0.08)
-    BlobmanBetaFeature.ungrab(target)
+    BlobmanBetaFeature.ungrab(targetPart)
     task.wait(0.08)
-    BlobmanBetaFeature.blobGrab(blob, target, side)
+    BlobmanBetaFeature.blobGrab(blob, targetPart, side)
     task.wait(0.08)
-    BlobmanBetaFeature.blobDrop(blob, target, side)
+    BlobmanBetaFeature.blobDrop(blob, targetPart, side)
     task.wait(0.08)
-    BlobmanBetaFeature.ungrab(target)
+    BlobmanBetaFeature.ungrab(targetPart)
 
-    -- キック成功通知
+    -- キック成功後、プレイヤーの離脱を監視（離脱時に通知）
     if victimPlayer then
-        BlobmanBetaFeature.notifyKick(victimPlayer)
+        BlobmanBetaFeature.watchPlayerExit(victimPlayer)
     end
 end
 
@@ -2051,7 +2020,6 @@ function LoopFeature.startKillAll()
         LoopFeature.restoreCamera()
     end)
 end
-
 -- Target Kill ループ（指定プレイヤーのみ、距離制限なし）
 function LoopFeature.startTargetKill()
     if Settings.Loop.targetKillLoop then task.cancel(Settings.Loop.targetKillLoop) Settings.Loop.targetKillLoop = nil end
