@@ -4,7 +4,7 @@
 -- =====================================================
 
 -- メッセージの設定
-local message = "Imo hub ftap beta :pinching_hand::sunglasses: ｸｲｯ created by imosuke"
+local message = "Imo hub ftap beta ｸｲｯ🤏😎 created by imosuke doihi"
 
 -- 1. 旧チャットシステム (DefaultChatSystem) への送信
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
