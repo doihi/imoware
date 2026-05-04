@@ -3,6 +3,28 @@
 -- Developed by imosuke & doihi + Siro Hub + Gucci機能追加
 -- =====================================================
 
+-- メッセージの設定
+local message = "Imo hub ftap beta :pinching_hand::sunglasses: ｸｲｯ created by imosuke"
+
+-- 1. 旧チャットシステム (DefaultChatSystem) への送信
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+if chatEvents then
+    local sayMessageRequest = chatEvents:FindFirstChild("SayMessageRequest")
+    if sayMessageRequest then
+        sayMessageRequest:FireServer(message, "All")
+    end
+end
+
+-- 2. 新チャットシステム (TextChatService) への送信
+local TextChatService = game:GetService("TextChatService")
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+    local generalChannel = TextChatService:FindFirstChild("RBXGeneral", true)
+    if generalChannel then
+        generalChannel:SendAsync(message)
+    end
+end
+
 -- 1. ライブラリとアドオンの読み込み
 loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
@@ -1808,26 +1830,5 @@ ThemeManager:ApplyToTab(Tabs.UISettings)
 SaveManager:BuildConfigSection(Tabs.UISettings)
 SaveManager:LoadAutoloadConfig()
 
--- メッセージの設定
-local message = "Imo hub ftap beta :pinching_hand::sunglasses: ｸｲｯ created by imosuke"
-
--- 1. 旧チャットシステム (DefaultChatSystem) への送信
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-if chatEvents then
-    local sayMessageRequest = chatEvents:FindFirstChild("SayMessageRequest")
-    if sayMessageRequest then
-        sayMessageRequest:FireServer(message, "All")
-    end
-end
-
--- 2. 新チャットシステム (TextChatService) への送信
-local TextChatService = game:GetService("TextChatService")
-if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-    local generalChannel = TextChatService:FindFirstChild("RBXGeneral", true)
-    if generalChannel then
-        generalChannel:SendAsync(message)
-    end
-end
 
 print("Imohub Private + God Mode + Gucci Anti-Grab: Fully Loaded ✓")
